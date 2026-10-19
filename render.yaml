@@ -2,12 +2,18 @@ services:
   - type: web
     name: beanstalk-character-studio
     runtime: node
-    buildCommand: npm install
+    buildCommand: npm ci
     startCommand: npm start
     healthCheckPath: /health
     envVars:
       - key: NODE_VERSION
         value: 22
+      - key: ONNXRUNTIME_NODE_INSTALL
+        value: skip
+      - key: MALLOC_ARENA_MAX
+        value: 2
+      - key: ORT_DISABLE_TELEMETRY
+        value: 1
       - key: CLOUDFLARE_ACCOUNT_ID
         sync: false
       - key: CLOUDFLARE_API_TOKEN

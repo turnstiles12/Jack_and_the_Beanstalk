@@ -1,43 +1,70 @@
-# Beanstalk Character Studio — Render + Cloudflare Workers AI
+# Beanstalk Studio — two scenes, same story, same person
 
-A web app to upload a portrait and transform the person into a Jack and the Beanstalk character.
+Upload a photo of a face and get one of exactly two pictures from *Jack and the Beanstalk*, starring that person as Jack:
 
-## Deploy on Render
+1. **planting** — "Jack is planting the seeds."
+2. **climbing** — "Jack is climbing the beanstalk."
 
-1. Push **the contents of this folder** to the root of a GitHub repository (or set Render's Root Directory to `beanstalk-studio` if your repo wraps it).
-2. In Render, choose **New → Web Service**, connect your repository and select **Node**.
-3. Enter **Build Command:** `npm install` and **Start Command:** `npm start` (or **Build:** `yarn install`, **Start:** `yarn start`).
-4. Set environment variables in Render (Environment tab):
-   - `CLOUDFLARE_ACCOUNT_ID`: Cloudflare account ID.
-   - `CLOUDFLARE_API_TOKEN`: A Cloudflare API token authorized to call Workers AI / AI Run on your account.
-5. Deploy. Render supplies `PORT` automatically; the app listens on `0.0.0.0:$PORT`.
-6. Open your Render URL. Health check: `/health`.
+Both scenes share the same costume and art style, so they read as two pages of one book.
 
-The included `render.yaml` also supports Render Blueprint creation; Render prompts for the two secret environment variables.
+## What every picture has to pass
 
-## Local run
+A picture is only returned if it passes **both** checks. Otherwise the server tries again (up to `MAX_ATTEMPTS`, default 3) and, if none pass, returns an error instead of a bad picture.
 
-Requires Node.js 20+.
+| Requirement | How it is checked |
+|---|---|
+| **It looks like the person** | The face in the picture is compared with the uploaded face using SFace face embeddings (cosine similarity ≥ `IDENTITY_MIN_SIMILARITY`, default 0.40). |
+| **It shows the caption** | A vision model (`@cf/meta/llama-4-scout-17b-16e-instruct` on Workers AI) must pick this scene's caption over the other one, confirm the specific action (kneeling + bean into soil / gripping the stalk off the ground), see exactly one person, and see the face clearly. |
 
-```bash
-npm install
-cp .env.example .env
-# Set values in your shell (Node doesn't automatically load .env unless started with --env-file)
-CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... npm start
-```
-
-Open http://localhost:10000.
-
-For Yarn, use `yarn install` and `yarn start`.
+Uploads are checked too: no face, more than one person, or a face too small to keep a likeness → a clear 422 message. The server crops a head-and-shoulders reference from the photo, so the model's < 512 px reference is spent on the face.
 
 ## How it works
 
-The browser resizes the reference portrait to under 512px and uploads it to the Render backend via `/api/generate`. The backend calls Cloudflare's REST endpoint for `@cf/black-forest-labs/flux-2-klein-4b` with multipart form data, then returns the generated image. Keep Cloudflare credentials **only in Render environment variables**, never in the frontend or git.
+```
+browser ──photo + scene──▶ server.js
+                            ├─ src/face.js      find the face (MTCNN), crop reference, embed it (SFace)
+                            ├─ src/cloudflare.js FLUX.2 [klein] generates the scene from the prompt + reference
+                            ├─ src/face.js      same person?           ─┐ fail → retry
+                            ├─ src/cloudflare.js vision model: scene?    ─┘ fail → retry
+                            └─ returns image + caption + the check results
+```
 
-## Notes
+* `src/scenes.js` — the two scenes: prompts, captions, what the scene check requires. Nothing else can be generated.
+* `src/pipeline.js` — generate → check → retry loop. Fails closed.
+* Face models run locally with ONNX Runtime (see `models/README.md`). Peak memory is about 300 MB, so it fits a 512 MB instance.
 
-- Render hosts the frontend and API. Cloudflare hosts the image-generation model. You do **not** need to deploy a Cloudflare Worker for this Render setup.
-- The existing `src/worker.js` and `wrangler.jsonc` are retained for Cloudflare-only deployment, but Render uses `server.js` instead.
-- Users must have permission to upload the photos they use. Render itself does not intentionally store uploaded photos; the reference is sent to Cloudflare to generate an image.
-- Public production use needs abuse protection, rate limits and/or authentication to control AI costs.
-- A valid Cloudflare account and token are required to test real generation; without them the UI serves but generation returns a setup error.
+## Deploy on Render
+
+1. Push this folder to GitHub (or set Render's Root Directory to the folder that contains `package.json`).
+2. **New → Web Service**, runtime **Node**. Build: `npm ci`. Start: `npm start`. (Or use `render.yaml` as a Blueprint.)
+3. Environment variables: `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` (needs Workers AI permission), `ONNXRUNTIME_NODE_INSTALL=skip` and `MALLOC_ARENA_MAX=2`.
+4. Health check: `/health`. Scene list: `/api/scenes`.
+
+`ONNXRUNTIME_NODE_INSTALL=skip` stops `onnxruntime-node` from downloading CUDA libraries during `npm ci` (the CPU build is already in the package). Set it locally too: `ONNXRUNTIME_NODE_INSTALL=skip npm ci` (PowerShell: `$env:ONNXRUNTIME_NODE_INSTALL='skip'; npm ci`).
+
+Optional: `FLUX_MODEL` (e.g. `@cf/black-forest-labs/flux-2-klein-9b` for stronger likeness at higher cost), `JUDGE_MODEL`, `IDENTITY_MIN_SIMILARITY`, `MAX_ATTEMPTS`, `RATE_LIMIT` (generations per IP per 10 minutes, default 6).
+
+The Cloudflare-Worker-only route (`src/worker.js`) no longer generates: the face check needs Node, so generation is Render-only.
+
+## Tests
+
+```bash
+npm ci
+npm test        # unit + integration tests, including the real face models
+```
+
+`npm test` covers: only the two scenes can be requested; prompts and the scene check; the retry / fail-closed loop; HTTP behaviour (400/405/413/422/429/502/503); and the real face models — different people (every pair in the sample group photos) are rejected, the same person in two different photos is accepted, and bad uploads (no face, several faces, tiny face) are refused.
+
+### Live test against a deployment
+
+Put a few face photos in `eval-faces/` (only of people who agreed; this folder is git-ignored), then:
+
+```bash
+node scripts/eval-live.mjs --url https://<your-app>.onrender.com --faces eval-faces --runs 2
+```
+
+It generates both scenes for each face, saves them to `eval-out/`, re-scores likeness locally — also against every *other* test face, so a generic face can't pass — and writes `eval-out/report.html` to review scene fidelity by eye.
+
+## Privacy
+
+Photos are sent to Cloudflare Workers AI for generation and checking; the server does not store them. Users need permission to upload the photos they use.
