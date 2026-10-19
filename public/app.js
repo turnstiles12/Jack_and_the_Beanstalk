@@ -58,7 +58,7 @@ $('#generate').addEventListener('click',async()=>{
     $('#captionSub').textContent = 'Checked: looks like you, and matches the scene.';
     $('#download').href = data.image;$('#download').download = `jack-${data.scene}.${data.image.startsWith('data:image/jpeg')?'jpg':'png'}`;
     $('#download').classList.remove('disabled');$('#download').setAttribute('aria-disabled','false');
-    setStatus('✨ Your scene is ready!');
+    setStatus('Your scene is ready!');
   }catch(error){setStatus(error.message || 'Could not generate an image.',true);}
   finally{button.disabled = false;button.innerHTML=BUTTON_HTML;}
 });
