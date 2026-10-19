@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f7f6ef" />
+  <title>Once Upon a Face — AI Fairy-Tale Portraits</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght,SOFT,WONK@9..144,500,20,1;9..144,700,20,1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="logo"><span class="logo-emblem">✿</span><span>once upon<br><strong>a face.</strong></span></div>
+      <div class="sidebar-mid"><div class="side-label">THE MAGIC BEGINS HERE</div><div class="side-step active"><span>01</span> Create your portrait</div><div class="side-step"><span>02</span> Enter the story</div><div class="side-step"><span>03</span> Keep the magic</div></div>
+      <div class="sidebar-bottom"><div class="leaf">❧</div><p>Every face has<br>a fairy tale to tell.</p><small>Made with a little magic & AI</small></div>
+    </aside>
+    <main>
+      <header class="topbar"><div class="crumb">THE STORYBOOK STUDIO <span>/</span> CREATE</div><span class="top-pill"><i></i> CLOUDFLARE AI CONNECTABLE</span></header>
+      <section class="intro"><div class="eyebrow"><span class="spark">✦</span> YOUR STORY STARTS HERE <span class="spark">✦</span></div><h1>Become part of<br><em>the fairy tale.</em></h1><p>Upload a photo, choose your storybook character, and watch yourself step into the magical world of Jack and the Beanstalk.</p></section>
+      <div class="workspace">
+        <section class="studio-card">
+          <div class="section-heading"><div><span class="step-num">01</span><h2>Your portrait</h2></div><span class="muted">A clear face works best</span></div>
+          <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="Upload a portrait photo"><input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp" hidden /><div id="uploadEmpty"><div class="upload-icon">⇧</div><h3>Drop your photo here</h3><p>or <span>browse your files</span></p><small>JPG, PNG or WebP · Max 6 MB</small></div><div id="uploadFilled" hidden><img id="portraitPreview" alt="Your uploaded portrait"/><button class="change-photo" id="changePhoto" type="button">Change photo ↗</button></div></div>
+          <div class="section-heading second"><div><span class="step-num">02</span><h2>Choose your character</h2></div></div>
+          <div class="characters" id="characters"><button type="button" class="character selected" data-character="jack"><span class="character-icon">🧑🏻‍🌾</span><strong>Jack</strong><small>The adventurer</small></button><button type="button" class="character" data-character="giant"><span class="character-icon">🏰</span><strong>The Giant</strong><small>Above the clouds</small></button><button type="button" class="character" data-character="princess"><span class="character-icon">👑</span><strong>Princess</strong><small>Royal magic</small></button><button type="button" class="character" data-character="harper"><span class="character-icon">🎵</span><strong>The Harper</strong><small>Golden melodies</small></button><button type="button" class="character" data-character="guardian"><span class="character-icon">🌿</span><strong>Guardian</strong><small>Forest enchantment</small></button></div>
+          <div class="section-heading second"><div><span class="step-num">03</span><h2>Pick an art style</h2></div></div>
+          <div class="styles" id="styles"><button type="button" class="style selected" data-style="storybook"><span>✎</span> Storybook</button><button type="button" class="style" data-style="cinematic"><span>✦</span> Cinematic</button><button type="button" class="style" data-style="animated"><span>◈</span> Animated</button><button type="button" class="style" data-style="watercolor"><span>❀</span> Watercolor</button></div>
+          <button id="generate" class="generate" type="button"><span class="button-spark">✧</span> Create my fairy tale portrait <span class="arrow">→</span></button><div id="status" class="status" aria-live="polite">Upload your photo to begin.</div>
+        </section>
+        <section class="preview-panel"><div class="preview-top"><span class="preview-title">✧ &nbsp; THE MAGIC MIRROR</span><span class="preview-counter">YOUR CREATION</span></div><div class="art-frame"><div id="placeholder" class="placeholder"><div class="castle">☁<br><span>♜</span></div><div class="beanstalk">❦</div><div class="placeholder-label"><span>A little magic awaits...</span><small>Your enchanted portrait will appear here</small></div></div><img id="result" alt="Your generated fairy tale character" hidden/></div><div class="preview-actions"><div><strong>A story starring you.</strong><span>A portrait straight out of a fairy tale.</span></div><a id="download" class="download disabled" href="#" download="my-fairy-tale-portrait.png" aria-disabled="true">↓ <span>Download</span></a></div><p class="privacy">✧ Photos are sent to Cloudflare Workers AI for processing. This starter doesn't save them.</p></section>
+      </div>
+      <footer><span>✿ once upon a face.</span><span>A little imagination goes a long way.</span></footer>
+    </main>
+  </div>
+  <script src="app.js" defer></script>
+</body>
+</html>
