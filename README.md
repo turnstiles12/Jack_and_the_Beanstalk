@@ -1,37 +1,43 @@
-# Once Upon a Face — Jack and the Beanstalk AI portrait studio
+# Beanstalk Character Studio — Render + Cloudflare Workers AI
 
-A responsive website and server-side Cloudflare Worker that edits a user-provided photo into a Jack and the Beanstalk storybook character.
+A web app to upload a portrait and transform the person into a Jack and the Beanstalk character.
 
-## Requirements
-- Node.js 20+
-- Cloudflare account with Workers AI access
+## Deploy on Render
 
-## Run locally
+1. Push **the contents of this folder** to the root of a GitHub repository (or set Render's Root Directory to `beanstalk-studio` if your repo wraps it).
+2. In Render, choose **New → Web Service**, connect your repository and select **Node**.
+3. Enter **Build Command:** `npm install` and **Start Command:** `npm start` (or **Build:** `yarn install`, **Start:** `yarn start`).
+4. Set environment variables in Render (Environment tab):
+   - `CLOUDFLARE_ACCOUNT_ID`: Cloudflare account ID.
+   - `CLOUDFLARE_API_TOKEN`: A Cloudflare API token authorized to call Workers AI / AI Run on your account.
+5. Deploy. Render supplies `PORT` automatically; the app listens on `0.0.0.0:$PORT`.
+6. Open your Render URL. Health check: `/health`.
+
+The included `render.yaml` also supports Render Blueprint creation; Render prompts for the two secret environment variables.
+
+## Local run
+
+Requires Node.js 20+.
 
 ```bash
 npm install
-npx wrangler login
-npm run dev
+cp .env.example .env
+# Set values in your shell (Node doesn't automatically load .env unless started with --env-file)
+CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... npm start
 ```
 
-Open the local URL printed by Wrangler (typically http://localhost:8787). Upload a face photo, choose a character and style, then generate.
+Open http://localhost:10000.
 
-## Deploy
+For Yarn, use `yarn install` and `yarn start`.
 
-```bash
-npm run deploy
-```
+## How it works
 
-Wrangler deploys the static assets and backend Worker together. Add your own Cloudflare account during Wrangler authentication. The Worker uses an **AI binding** (`env.AI`), so no API key is exposed in browser code and no API token needs to be pasted into the site.
+The browser resizes the reference portrait to under 512px and uploads it to the Render backend via `/api/generate`. The backend calls Cloudflare's REST endpoint for `@cf/black-forest-labs/flux-2-klein-4b` with multipart form data, then returns the generated image. Keep Cloudflare credentials **only in Render environment variables**, never in the frontend or git.
 
-## Model
+## Notes
 
-`@cf/black-forest-labs/flux-2-klein-4b` handles image editing with a source portrait as `input_image_0`. Client-side downscaling keeps the source image below 512x512, per Cloudflare docs. Output is 768x1024. Model cost is usage-based; see https://developers.cloudflare.com/workers-ai/platform/pricing/ .
-
-## Important
-
-- The current version **does not store** uploaded or generated photos. They are processed by the Worker and the Cloudflare AI model, then returned to the browser.
-- Identity preservation is **best effort**, not guaranteed. For stronger face likeness, a specialized face-ID workflow may be needed.
-- Before making a public deployment, implement authentication, abuse protection, and rate limiting to limit usage costs.
-- Faces should be uploaded with the person's consent.
-- A deployed Cloudflare account is required for real generations; this starter cannot simulate API generation offline.
+- Render hosts the frontend and API. Cloudflare hosts the image-generation model. You do **not** need to deploy a Cloudflare Worker for this Render setup.
+- The existing `src/worker.js` and `wrangler.jsonc` are retained for Cloudflare-only deployment, but Render uses `server.js` instead.
+- Users must have permission to upload the photos they use. Render itself does not intentionally store uploaded photos; the reference is sent to Cloudflare to generate an image.
+- Public production use needs abuse protection, rate limits and/or authentication to control AI costs.
+- A valid Cloudflare account and token are required to test real generation; without them the UI serves but generation returns a setup error.
