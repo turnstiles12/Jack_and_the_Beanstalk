@@ -1,6 +1,6 @@
 const $ = (s) => document.querySelector(s);
 const fileInput = $('#fileInput'), dropzone = $('#dropzone'), statusEl = $('#status');
-const BUTTON_HTML = '<span class="button-spark">✧</span> Create my scene <span class="arrow">→</span>';
+const BUTTON_HTML = '<span class="button-spark"></span> Create my scene <span class="arrow">→</span>';
 let uploadedFile = null, scene = 'planting';
 
 function setStatus(message, error = false){statusEl.textContent = message;statusEl.classList.toggle('error', error);}
@@ -44,7 +44,7 @@ async function prepareUpload(file){
 
 $('#generate').addEventListener('click',async()=>{
   if(!uploadedFile) return setStatus('Please upload a photo of your face first.',true);
-  const button = $('#generate');button.disabled = true;button.textContent='✧  Painting your scene…';
+  const button = $('#generate');button.disabled = true;button.textContent='Painting your scene…';
   setStatus('Painting and checking your picture. This can take up to a minute.');
   try{
     const image = await prepareUpload(uploadedFile);
